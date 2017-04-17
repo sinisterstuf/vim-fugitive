@@ -142,6 +142,9 @@ function! fugitive#extract_git_dir(path) abort
     if index(split($GIT_CEILING_DIRECTORIES, ':'), root) >= 0
       break
     endif
+    if g:fugitive_git_executable ==# 'yadm'
+      return $HOME.'/.yadm/repo.git'
+    endif
     if root ==# $GIT_WORK_TREE && fugitive#is_git_dir($GIT_DIR)
       return $GIT_DIR
     endif
@@ -2471,7 +2474,17 @@ function! s:BufReadIndex() abort
       if fugitive#git_version() =~# '^0\|^1\.[1-3]\.'
         let cmd = s:repo().git_command('status')
       elseif fugitive#git_version() =~# '^1\.[4-7]\.'
-        let cmd = s:repo().git_command('status', '-u')
+        if g:fugitive_git_executable ==# 'yadm'
+          let cmd = s:repo().git_command('status')
+        else
+          let cmd = s:repo().git_command('status', '-u')
+        endif
+      elseif g:fugitive_git_executable ==# 'yadm'
+        let cmd = s:repo().git_command(
+              \ '-c', 'status.displayCommentPrefix=true',
+              \ '-c', 'color.status=false',
+              \ '-c', 'status.short=false',
+              \ 'status')
       else
         let cmd = s:repo().git_command(
               \ '-c', 'status.displayCommentPrefix=true',
